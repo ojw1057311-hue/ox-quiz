@@ -12,17 +12,12 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        /* 기본적으로 텍스트 선택을 막지만, 관리자 페이지의 텍스트 박스만 선택 가능하도록 설정 */
         body { font-family: 'Pretendard', sans-serif; background-color: #E8EDF8; color: #1C234D; user-select: none; }
         .bg-navy { background-color: #212962; }
         .text-navy { color: #212962; }
         .btn-locked { background-color: #FBBF24 !important; border-color: #FBBF24 !important; color: #fff !important; cursor: not-allowed; }
         .hidden { display: none !important; }
-        
-        /* 텍스트 드래그 복사를 허용하는 클래스 */
         .allow-select { user-select: text !important; -webkit-user-select: text !important; }
-        
-        /* 스크롤바 스타일 */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
@@ -43,7 +38,7 @@
             <button onclick="navigate('admin-login')" class="bg-navy text-white px-5 py-2 rounded-lg font-bold hover:bg-opacity-90 transition">관리자</button>
         </div>
 
-        <!-- 6개 팀 카드 (3열 2행 구조) -->
+        <!-- 6개 팀 카드 -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="team-cards-container">
             <!-- 자바스크립트로 렌더링 됨 -->
         </div>
@@ -73,4 +68,31 @@
                 <label class="text-navy font-bold text-lg">추가 의견 작성 (선택사항)</label>
                 <span class="text-xs text-gray-400">최대 200자</span>
             </div>
-            <textarea id="team-text-input" maxlength
+            <textarea id="team-text-input" maxlength="200" class="allow-select w-full p-4 rounded-xl border-2 border-gray-300 focus:border-navy focus:outline-none resize-none h-32 text-base transition-colors" placeholder="여기에 내용을 입력하세요..."></textarea>
+            <button onclick="submitTextAnswer()" id="btn-submit-text" class="bg-navy text-white font-bold py-4 rounded-xl hover:bg-opacity-90 transition text-lg mt-2">의견 제출하기</button>
+            <p id="text-submit-msg" class="hidden text-center text-green-600 font-bold mt-2">✅ 의견이 성공적으로 제출되었습니다. (수정 불가)</p>
+        </div>
+    </div>
+
+    <!-- 관리자 로그인 화면 -->
+    <div id="view-admin-login" class="hidden w-full max-w-md w-full flex-col items-center justify-center h-[70vh]">
+        <h2 class="text-4xl font-black text-navy mb-4">관리자</h2>
+        <p class="text-gray-600 mb-8 font-medium">비밀번호 4자리를 입력하세요.</p>
+        <input type="password" id="admin-pw" class="w-full border-2 border-blue-400 rounded-xl text-center text-3xl py-4 mb-8 focus:outline-none focus:border-navy" maxlength="4">
+        <div class="flex gap-4">
+            <button onclick="navigate('main')" class="bg-white border-2 border-gray-300 text-navy px-8 py-3 rounded-xl font-bold hover:bg-gray-50 transition">메인으로</button>
+            <button onclick="checkAdmin()" class="bg-navy text-white px-8 py-3 rounded-xl font-bold hover:bg-opacity-90 transition">들어가기</button>
+        </div>
+    </div>
+
+    <!-- 관리자 컨트롤 화면 -->
+    <div id="view-admin" class="hidden w-full max-w-6xl w-full">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-black text-navy">관리자 페이지</h2>
+            <div class="flex gap-3">
+                <button onclick="navigate('main')" class="bg-white border-2 border-gray-300 text-navy px-5 py-2 rounded-lg font-bold hover:bg-gray-50 transition">메인으로</button>
+                <button onclick="resetGame()" class="bg-red-500 text-white px-5 py-2 rounded-lg font-bold hover:bg-red-600 transition">전체 리셋</button>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 mb-6
