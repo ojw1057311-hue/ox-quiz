@@ -12,11 +12,19 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
+        /* 기본적으로 텍스트 선택을 막지만, 관리자 페이지의 텍스트 박스만 선택 가능하도록 설정 */
         body { font-family: 'Pretendard', sans-serif; background-color: #E8EDF8; color: #1C234D; user-select: none; }
         .bg-navy { background-color: #212962; }
         .text-navy { color: #212962; }
         .btn-locked { background-color: #FBBF24 !important; border-color: #FBBF24 !important; color: #fff !important; cursor: not-allowed; }
         .hidden { display: none !important; }
+        
+        /* 텍스트 드래그 복사를 허용하는 클래스 */
+        .allow-select { user-select: text !important; -webkit-user-select: text !important; }
+        
+        /* 스크롤바 스타일 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
@@ -41,8 +49,8 @@
         </div>
     </div>
 
-    <!-- 팀별 투표 화면 -->
-    <div id="view-team" class="hidden w-full max-w-4xl w-full flex-col h-[80vh]">
+    <!-- 팀별 투표 및 텍스트 입력 화면 -->
+    <div id="view-team" class="hidden w-full max-w-4xl w-full flex-col h-auto min-h-[80vh] pb-10">
         <div class="flex justify-between items-center mb-8">
             <button onclick="navigate('main')" class="bg-white text-navy border-2 border-[#212962] px-6 py-2 rounded-xl font-bold hover:bg-gray-50 transition">메인으로</button>
             <span id="team-question-num" class="bg-navy text-white text-sm px-4 py-1 rounded-full font-bold">1번 문제</span>
@@ -51,250 +59,18 @@
             <h2 id="team-title" class="text-5xl font-black text-navy">1조</h2>
             <div class="text-2xl font-black text-navy"><span id="team-score-display">0</span><span class="text-lg">점</span></div>
         </div>
-        <p class="text-gray-600 mb-8 font-medium">정답이라고 생각하는 쪽을 누르세요. (한 번 누르면 바꿀 수 없습니다)</p>
+        <p class="text-gray-600 mb-6 font-medium">정답이라고 생각하는 쪽을 누르세요. (한 번 누르면 바꿀 수 없습니다)</p>
         
-        <div class="flex gap-6 flex-1">
-            <button onclick="submitAnswer('O')" id="btn-O" class="flex-1 bg-navy text-white text-[10rem] font-bold rounded-[2rem] hover:bg-opacity-90 transition flex items-center justify-center border-4 border-transparent">O</button>
-            <button onclick="submitAnswer('X')" id="btn-X" class="flex-1 bg-navy text-white text-[10rem] font-bold rounded-[2rem] hover:bg-opacity-90 transition flex items-center justify-center border-4 border-transparent">X</button>
+        <!-- O / X 버튼 구역 -->
+        <div class="flex gap-6 h-64 mb-8">
+            <button onclick="submitAnswer('O')" id="btn-O" class="flex-1 bg-navy text-white text-[8rem] font-bold rounded-[2rem] hover:bg-opacity-90 transition flex items-center justify-center border-4 border-transparent">O</button>
+            <button onclick="submitAnswer('X')" id="btn-X" class="flex-1 bg-navy text-white text-[8rem] font-bold rounded-[2rem] hover:bg-opacity-90 transition flex items-center justify-center border-4 border-transparent">X</button>
         </div>
-    </div>
 
-    <!-- 관리자 로그인 화면 -->
-    <div id="view-admin-login" class="hidden w-full max-w-md w-full flex-col items-center justify-center h-[70vh]">
-        <h2 class="text-4xl font-black text-navy mb-4">관리자</h2>
-        <p class="text-gray-600 mb-8 font-medium">비밀번호 4자리를 입력하세요.</p>
-        <input type="password" id="admin-pw" class="w-full border-2 border-blue-400 rounded-xl text-center text-3xl py-4 mb-8 focus:outline-none focus:border-navy" maxlength="4">
-        <div class="flex gap-4">
-            <button onclick="navigate('main')" class="bg-white border-2 border-gray-300 text-navy px-8 py-3 rounded-xl font-bold hover:bg-gray-50 transition">메인으로</button>
-            <button onclick="checkAdmin()" class="bg-navy text-white px-8 py-3 rounded-xl font-bold hover:bg-opacity-90 transition">들어가기</button>
-        </div>
-    </div>
-
-    <!-- 관리자 컨트롤 화면 -->
-    <div id="view-admin" class="hidden w-full max-w-6xl w-full">
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="text-3xl font-black text-navy">관리자 페이지</h2>
-            <div class="flex gap-3">
-                <button onclick="navigate('main')" class="bg-white border-2 border-gray-300 text-navy px-5 py-2 rounded-lg font-bold hover:bg-gray-50 transition">메인으로</button>
-                <button onclick="resetGame()" class="bg-red-500 text-white px-5 py-2 rounded-lg font-bold hover:bg-red-600 transition">전체 리셋</button>
+        <!-- 서술형 텍스트 입력 구역 -->
+        <div class="flex flex-col gap-3 bg-white p-6 rounded-[2rem] shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center">
+                <label class="text-navy font-bold text-lg">추가 의견 작성 (선택사항)</label>
+                <span class="text-xs text-gray-400">최대 200자</span>
             </div>
-        </div>
-
-        <div class="flex items-center gap-4 mb-6">
-            <span id="admin-question-num" class="bg-navy text-white text-sm px-4 py-1 rounded-full font-bold">1번 문제</span>
-            <span id="admin-selected-count" class="text-sm font-medium text-gray-600">0팀 선택 완료</span>
-        </div>
-
-        <!-- 6개 팀 컨트롤 (6열 1행 구조) -->
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10" id="admin-cards-container">
-            <!-- 자바스크립트로 렌더링 됨 -->
-        </div>
-
-        <h3 class="text-xl font-bold text-navy mb-2">정답 공개</h3>
-        <p class="text-gray-600 mb-4 text-sm">정답을 누르면 맞춘 팀 +5점, 틀린 팀 -5점이 반영되고 다음 문제로 넘어갑니다. 선택하지 않은 팀은 점수 변동이 없습니다.</p>
-        
-        <div class="flex gap-6 h-48 max-w-2xl">
-            <button onclick="resolveRound('O')" class="flex-1 bg-navy text-white text-[6rem] font-bold rounded-2xl hover:bg-opacity-90 transition flex items-center justify-center">O</button>
-            <button onclick="resolveRound('X')" class="flex-1 bg-navy text-white text-[6rem] font-bold rounded-2xl hover:bg-opacity-90 transition flex items-center justify-center">X</button>
-        </div>
-    </div>
-
-    <script>
-        // 전달해주신 파이어베이스 접속 정보 적용 완료
-        const firebaseConfig = {
-            apiKey: "AIzaSyBpF1g6qgmv8CN7mk_C3CnAQt4G0ntuBkk",
-            authDomain: "oxquiz-d4199.firebaseapp.com",
-            databaseURL: "https://oxquiz-d4199-default-rtdb.firebaseio.com",
-            projectId: "oxquiz-d4199",
-            storageBucket: "oxquiz-d4199.firebasestorage.app",
-            messagingSenderId: "1075593177108",
-            appId: "1:1075593177108:web:44530494c55bea73265f01",
-            measurementId: "G-ZE0PZ4426T"
-        };
-
-        // 파이어베이스 초기화
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const dbRef = database.ref('quizData');
-
-        // 로컬 상태 (서버와 동기화됨, 6개 팀으로 설정)
-        let state = {
-            questionNum: 1,
-            teams: Array(6).fill(null).map((_, i) => ({ id: i + 1, score: 0, selected: null }))
-        };
-
-        let currentActiveTeamId = null;
-
-        // DB에서 데이터 실시간 수신
-        dbRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                state = data;
-                renderMain();
-                renderAdmin();
-                
-                if (currentActiveTeamId !== null) {
-                    const myTeam = state.teams.find(t => t.id === currentActiveTeamId);
-                    updateTeamUI(myTeam);
-                }
-            } else {
-                dbRef.set(state);
-            }
-        });
-
-        function navigate(viewId, teamId = null) {
-            document.querySelectorAll('body > div').forEach(div => div.classList.add('hidden'));
-            document.getElementById(`view-${viewId}`).classList.remove('hidden');
-            
-            if (viewId === 'team' && teamId) {
-                currentActiveTeamId = teamId;
-                setupTeamPage(teamId);
-            } else {
-                currentActiveTeamId = null;
-            }
-
-            if(viewId === 'admin-login') {
-                document.getElementById('admin-pw').value = '';
-            }
-        }
-
-        function checkAdmin() {
-            const pw = document.getElementById('admin-pw').value;
-            if (pw === '8688') {
-                navigate('admin');
-            } else {
-                alert('비밀번호가 틀렸습니다.');
-            }
-        }
-
-        function renderMain() {
-            document.getElementById('main-question-num').innerText = `${state.questionNum}번 문제`;
-            const container = document.getElementById('team-cards-container');
-            
-            const maxScore = Math.max(...state.teams.map(t => t.score));
-            const hasScore = maxScore > 0;
-
-            container.innerHTML = state.teams.map(team => {
-                const isFirstPlace = hasScore && team.score === maxScore;
-                const cardClass = isFirstPlace 
-                    ? 'bg-navy rounded-2xl p-6 relative border-4 border-[#FBBF24] shadow-lg cursor-pointer transform hover:scale-105 transition' 
-                    : 'bg-navy rounded-2xl p-6 relative shadow-lg cursor-pointer transform hover:scale-105 transition';
-
-                const statusColor = team.selected ? 'text-green-400' : 'text-gray-500';
-                const statusText = team.selected ? '선택 완료' : '선택 전';
-
-                return `
-                    <div class="${cardClass}" onclick="navigate('team', ${team.id})">
-                        <div class="flex justify-between text-white font-bold mb-4">
-                            <span class="text-2xl">${team.id}조</span>
-                            ${isFirstPlace ? '<span class="text-[#FBBF24] text-sm">1위</span>' : ''}
-                        </div>
-                        <div class="text-white text-center mb-8">
-                            <span class="text-7xl font-black">${team.score}</span>
-                            <span class="text-sm font-medium ml-1">점</span>
-                        </div>
-                        <div class="absolute bottom-4 left-6 flex items-center gap-2">
-                            <div class="w-2 h-2 rounded-full ${team.selected ? 'bg-green-400' : 'bg-gray-500'}"></div>
-                            <span class="${statusColor} text-xs font-bold">${statusText}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function setupTeamPage(teamId) {
-            document.getElementById('team-question-num').innerText = `${state.questionNum}번 문제`;
-            document.getElementById('team-title').innerText = `${teamId}조`;
-            
-            const team = state.teams.find(t => t.id === teamId);
-            document.getElementById('team-score-display').innerText = team.score;
-            updateTeamUI(team);
-        }
-
-        function updateTeamUI(team) {
-            const btnO = document.getElementById('btn-O');
-            const btnX = document.getElementById('btn-X');
-            
-            btnO.classList.remove('btn-locked');
-            btnX.classList.remove('btn-locked');
-            
-            if (team.selected === 'O') {
-                btnO.classList.add('btn-locked');
-                btnX.classList.remove('btn-locked');
-            } else if (team.selected === 'X') {
-                btnX.classList.add('btn-locked');
-                btnO.classList.remove('btn-locked');
-            }
-        }
-
-        function submitAnswer(answer) {
-            const teamIndex = state.teams.findIndex(t => t.id === currentActiveTeamId);
-            if (state.teams[teamIndex].selected) return; 
-            
-            dbRef.child(`teams/${teamIndex}`).update({ selected: answer });
-        }
-
-        function renderAdmin() {
-            document.getElementById('admin-question-num').innerText = `${state.questionNum}번 문제`;
-            
-            const selectedCount = state.teams.filter(t => t.selected).length;
-            document.getElementById('admin-selected-count').innerText = `${selectedCount}팀 선택 완료`;
-
-            const container = document.getElementById('admin-cards-container');
-            container.innerHTML = state.teams.map((team, index) => {
-                let statusText = '미선택';
-                let statusClass = 'text-gray-400';
-                
-                if (team.selected) {
-                    statusText = team.selected + ' 선택';
-                    statusClass = 'text-[#FBBF24]';
-                }
-
-                return `
-                    <div class="bg-navy rounded-xl p-4 flex flex-col">
-                        <div class="text-white font-bold text-center mb-2">${team.id}조</div>
-                        <div class="text-white text-center text-4xl font-black mb-1">${team.score}</div>
-                        <div class="text-center text-xs font-bold mb-4 ${statusClass}">${statusText}</div>
-                        
-                        <div class="mt-auto flex flex-col gap-2">
-                            <button onclick="modifyScore(${index}, 5)" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded">+5</button>
-                            <button onclick="modifyScore(${index}, -5)" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded">-5</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function modifyScore(teamIndex, amount) {
-            const currentScore = state.teams[teamIndex].score;
-            dbRef.child(`teams/${teamIndex}`).update({ score: currentScore + amount });
-        }
-
-        function resolveRound(correctAnswer) {
-            if(!confirm(`정답을 ${correctAnswer}로 확정하고 다음 문제로 넘어가시겠습니까?`)) return;
-
-            const newTeams = state.teams.map(team => {
-                let change = 0;
-                if (team.selected === correctAnswer) change = 5;
-                else if (team.selected && team.selected !== correctAnswer) change = -5;
-                
-                return { ...team, score: team.score + change, selected: null };
-            });
-
-            dbRef.update({
-                questionNum: state.questionNum + 1,
-                teams: newTeams
-            });
-        }
-
-        function resetGame() {
-            if(!confirm('정말 모든 점수와 문제 번호를 초기화하시겠습니까?')) return;
-            const initialState = {
-                questionNum: 1,
-                teams: Array(6).fill(null).map((_, i) => ({ id: i + 1, score: 0, selected: null }))
-            };
-            dbRef.set(initialState);
-        }
-    </script>
-</body>
-</html>
+            <textarea id="team-text-input" maxlength
